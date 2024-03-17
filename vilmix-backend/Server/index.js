@@ -15,16 +15,17 @@ server.use(express.json());
 server.use(cors());
 
 server.post('/create_preference',async (req,res)=>{
-   
+
     try {
         const body ={
             items:[
              {
-                title:req.body.nombre,
-                quantity:req.body.cantidad,
-                unit_price:req.body.precio,
+                title:req.body.items.nombre,
+                quantity:req.body.items[0].cantidad,
+                unit_price:req.body.items[0].precio,
                 currency_id : "ARS",
              },
+             console.log(req.body)
             ],
             back_urls:{
                 success:"https://www.mercadopago.com.ar/developers/en/docs/credentials",
