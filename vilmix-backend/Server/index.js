@@ -14,18 +14,18 @@ const server = express();
 server.use(express.json());
 server.use(cors());
 
-server.post('/create_preference',async (req,res)=>{
+server.post('/Mercado_pago',async (req,res)=>{
 
     try {
         const body ={
             items:[
              {
-                title:req.body.items.nombre,
+                title:req.body.items[0].nombre,
                 quantity:req.body.items[0].cantidad,
                 unit_price:req.body.items[0].precio,
                 currency_id : "ARS",
              },
-             console.log(req.body)
+         
             ],
             back_urls:{
                 success:"https://www.mercadopago.com.ar/developers/en/docs/credentials",
@@ -39,9 +39,7 @@ server.post('/create_preference',async (req,res)=>{
         const preference = new Preference(client);
         const resutlt = await preference.create({body});
 
- res.json({
-    id:resutlt.id,
- });
+ res.status(200).json(resutlt.api_response.init_point)
 } catch (error) {
     console.log(error)
     res.status(500).json({
