@@ -9,8 +9,6 @@ import products from './src/routes/products.js'; // Importa las rutas de autenti
 
 // Inicialización de las variables de entorno
 
-
-
 const server = express();
 server.use(express.json());
 server.use(cors());
@@ -85,5 +83,5 @@ server.post('/confirmation', async function (req,res){
 
 
 server.use('/auth', authRoutes);
-server.use('/products', products);  // Usa las rutas de autenticación en /auth
+server.use('/', products);  // Usa las rutas de autenticación en /auth
 

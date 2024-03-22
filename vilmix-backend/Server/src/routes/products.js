@@ -36,5 +36,23 @@ router.get('/productos', (req, res) => {
     });
 });
 
+router.post('/productos', (req, res) => {
+  const { nombre, imagen, cantidad, descripcion, precio, category } = req.body; // Recibir los datos del nuevo producto desde el cuerpo de la solicitud
+
+
+  const sql = 'INSERT INTO products (nombre, imagen, cantidad, descripcion, precio, category) VALUES (?, ?, ?, ?, ?, ?)';
+  const values = [nombre, imagen, cantidad, descripcion, precio, category];
+
+  db.query(sql, values, (error, results) => {
+      if (error) {
+          console.error('Error al agregar el producto:', error);
+          res.status(500).json({ error: 'Error al agregar el producto' });
+          return;
+      }
+
+      console.log('Producto agregado correctamente:', { id: results.insertId, nombre, imagen, cantidad, descripcion, precio, category });
+      res.status(201).json({ message: 'Producto agregado correctamente', productId: results.insertId });
+  });
+});
 
 export default router;
