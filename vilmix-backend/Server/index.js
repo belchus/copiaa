@@ -1,56 +1,89 @@
-import express  from 'express';
+import express, { response } from 'express';
 import cors from 'cors';
-import { config as configDotenv } from 'dotenv'; // Cambio en la importación
+import { config as configDotenv } from 'dotenv';
+import mercadopago from 'mercadopago';
+import mysql from 'mysql'
+import authRoutes from './src/routes/authroutes.js';
+import products from './src/routes/products.js'; // Importa las rutas de autenticación desde authroutes.js
+ // Importa tu conexión de base de datos desde otro archivo
 
-// Cargar las variables de entorno desde el archivo .env
-configDotenv();
-// Mercado Pago SDK
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+// Inicialización de las variables de entorno
 
-// Add Your credentials
-const client = new MercadoPagoConfig({ accessToken:"TEST-6544339040733152-031522-4d7eb2feb9ef209e5b16692cae46e27b-191929307" });
+
 
 const server = express();
 server.use(express.json());
 server.use(cors());
-
-server.post('/Mercado_pago',async (req,res)=>{
-
-    try {
-        const body ={
-            items:[
-             {
-                title:req.body.items[0].nombre,
-                quantity:req.body.items[0].cantidad,
-                unit_price:req.body.items[0].precio,
-                currency_id : "ARS",
-             },
-         
-            ],
-            back_urls:{
-                success:"https://www.mercadopago.com.ar/developers/en/docs/credentials",
-                failure:"https://www.youtube.com/watch?v=vEXwN9-tKcs&ab_channel=onthecode",
-                pending:"",
-            },
-            auto_return:"approved"
-
-        
-        };
-        const preference = new Preference(client);
-        const resutlt = await preference.create({body});
-
- res.status(200).json(resutlt.api_response.init_point)
-} catch (error) {
-    console.log(error)
-    res.status(500).json({
-        error: "ERROR AL CREAR LA PREFERENCIA"
-    })
-}
-
-})
+mercadopago.configure({
+    access_token: 'TEST-6544339040733152-031522-4d7eb2feb9ef209e5b16692cae46e27b-191929307'
+  });
 server.get("/",(req,res) => {
     res.send("Servidor up")
 });
+server.use(cors({
+    origin: 'http://localhost:3000', // Reemplaza esto con el origen de tu cliente React
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 server.listen(4000,() => console.log('servidor levantado') );
+server.post('/Mercado_pago', async (req, res) => {
+    console.log(req.body.items[0]);
+    try {
+        // Construir el cuerpo de la preferencia con los datos recibidos
+        const body = {
+            items: [{
+                title: req.body.items[0].nombre,
+                quantity: req.body.items[0].cantidad,
+                unit_price: req.body.items[0].precio,
+                currency_id: "ARS",
+            }],
+            back_urls: {
+                success: "http://localhost:4000/confirmation",
+                failure: "URL_FALLA",
+                pending: "URL_PENDIENTE",
+            },
+            auto_return: "approved",
+            notification_url : "http://localhost:4000/confirmation"
+        };
+ 
+        mercadopago.preferences.create(body)
+        
+            .then(response => {
+                const initPoint = response.body.init_point;
+                res.status(200).send({ initPoint });
+            })
+            .catch(error => {
+                console.log(error);
+                res.status(500).json({ error: "ERROR AL CREAR LA PREFERENCIA" });
+            });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: "ERROR AL PROCESAR LA SOLICITUD" });
+    }
+});
+
+server.post('/confirmation', async function (req,res){
+    const payment = req.query.id
+    try {
+        const response = await fetch ('https://api.mercadopago.com/v1/payments/${payment}',{
+            method: 'GET',
+            headers:{
+                'Authorization': 'Bearer ${client.accessToken}'
+            }
+        });
+        if (response.ok){
+            const data =await response.json();
+            console.log(data)
+        }
+        res.sendStatus(data)
+    } catch (error) {
+        console.error('ERROR', error);
+        res.sendStatus(500)
+    }    
+})
+
+
+server.use('/auth', authRoutes);
+server.use('/products', products);  // Usa las rutas de autenticación en /auth
 
