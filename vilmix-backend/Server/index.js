@@ -3,6 +3,8 @@ import cors from 'cors';
 import { config as configDotenv } from 'dotenv';
 import mercadopago from 'mercadopago';
 import mysql from 'mysql'
+import session from 'express-session';
+
 import authRoutes from './src/routes/authroutes.js';
 import products from './src/routes/products.js'; // Importa las rutas de autenticación desde authroutes.js
  // Importa tu conexión de base de datos desde otro archivo
@@ -19,11 +21,13 @@ server.get("/",(req,res) => {
     res.send("Servidor up")
 });
 server.use(cors({
-    origin: 'http://localhost:3000', // Reemplaza esto con el origen de tu cliente React
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: 'http://localhost:3000', // Cambia esto por el origen de tu frontend
+    credentials: true // Permite el intercambio de cookies entre dominios
 }));
 
+
+
+  
 server.listen(4000,() => console.log('servidor levantado') );
 server.post('/Mercado_pago', async (req, res) => {
     console.log(req.body.items[0]);
