@@ -4,14 +4,13 @@ import { config as configDotenv } from 'dotenv';
 import mercadopago from 'mercadopago';
 import mysql from 'mysql'
 import session from 'express-session';
+import addTokenToHeaders from './src/middleware.js';
 
 import authRoutes from './src/routes/authroutes.js';
-import products from './src/routes/products.js'; // Importa las rutas de autenticación desde authroutes.js
- // Importa tu conexión de base de datos desde otro archivo
-
-// Inicialización de las variables de entorno
-
+import products from './src/routes/products.js';
+import cart from './src/routes/cart.js';
 const server = express();
+server.use(addTokenToHeaders);
 server.use(express.json());
 server.use(cors());
 mercadopago.configure({
@@ -87,5 +86,6 @@ server.post('/confirmation', async function (req,res){
 
 
 server.use('/auth', authRoutes);
-server.use('/', products);  // Usa las rutas de autenticación en /auth
+server.use('/', products); 
+server.use('/cart', cart); // Usa las rutas de autenticación en /auth
 

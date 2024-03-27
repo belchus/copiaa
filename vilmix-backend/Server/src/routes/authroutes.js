@@ -25,12 +25,22 @@ router.post('/login', (req, res) => {
             return res.status(401).json({ error: 'Credenciales incorrectas' });
         }
         // Si las credenciales son válidas, generar token JWT
-        const token = jwt.sign({ email: user.email, role: user.role }, 'secreto', { expiresIn: '1h' });
-        return res.json({ token });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'secreto', { expiresIn: '1h' });
+        // Guardar el token en la base de datos
+        const insertTokenQuery = 'INSERT INTO tokens (user_id, token) VALUES (?, ?)';
+       
+        const tokenValues = [user.id, token];
+        console.log(user.id)
+        db.query(insertTokenQuery, tokenValues, (error, result) => {
+            if (error) {
+                console.error('Error al guardar el token en la base de datos:', error);
+                return res.status(500).json({ error: 'Error en el servidor' });
+            }
+            return res.json({ token });
+        });
     });
 });
 
-// Middleware para verificar el token JWT
 const verifyToken = (req, res, next) => {
     const token = req.headers.authorization;
     if (!token) {
@@ -45,9 +55,9 @@ const verifyToken = (req, res, next) => {
     });
 };
 
-// Ruta protegida que solo puede ser accedida con un token válido
+
 router.get('/protected', verifyToken, (req, res) => {
-    res.json({ message: 'Ruta protegida' });
+    res.json({ message: 'Ruta protegida', userId: req.user.id });
 });
 
 
@@ -98,6 +108,44 @@ router.get('/admin-only', isAdmin, (req, res) => {
     // Si se llega a esta parte del código, significa que el usuario es un administrador
     // y tiene acceso a esta ruta
     res.json({ message: 'Esta es una ruta solo para administradores' });
+});
+router.get('/user', verifyToken, (req, res) => {
+    const userId = req.user.id;
+    // Consulta SQL para obtener los datos del usuario basados en su ID
+    const sql = 'SELECT * FROM login WHERE id = ?';
+    const values = [userId];
+    db.query(sql, values, (error, data) => {
+        if (error) {
+            console.error('Error en la consulta SQL:', error);
+            return res.status(500).json({ error: 'Error en el servidor' });
+        }
+        if (data.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        // Devolver los datos del usuario encontrado
+        const userData = data[0];
+        return res.json(userData);
+    });
+});
+
+
+router.get('/users/:id', verifyToken, (req, res) => {
+    const userId = req.params.id;
+    // Consulta SQL para obtener datos de un usuario específico basado en su ID
+    const sql = 'SELECT * FROM login WHERE id = ?';
+    const values = [userId];
+    db.query(sql, values, (error, data) => {
+        if (error) {
+            console.error('Error en la consulta SQL:', error);
+            return res.status(500).json({ error: 'Error en el servidor' });
+        }
+        if (data.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        // Devolver los datos del usuario encontrado
+        const userData = data[0];
+        return res.json(userData);
+    });
 });
 
 
