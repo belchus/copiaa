@@ -2,15 +2,13 @@ import express, { response } from 'express';
 import cors from 'cors';
 import { config as configDotenv } from 'dotenv';
 import mercadopago from 'mercadopago';
-import mysql from 'mysql'
-import session from 'express-session';
-import addTokenToHeaders from './src/middleware.js';
 
 import authRoutes from './src/routes/authroutes.js';
 import products from './src/routes/products.js';
 import cart from './src/routes/cart.js';
+
 const server = express();
-server.use(addTokenToHeaders);
+
 server.use(express.json());
 server.use(cors());
 mercadopago.configure({
@@ -23,6 +21,7 @@ server.use(cors({
     origin: 'http://localhost:3000', // Cambia esto por el origen de tu frontend
     credentials: true // Permite el intercambio de cookies entre dominios
 }));
+
 
 
 

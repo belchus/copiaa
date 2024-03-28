@@ -6,7 +6,6 @@ import jwt from 'jsonwebtoken';
 const router = express.Router();
 
 
-
 router.post('/login', (req, res) => {
     const { email, password } = req.body;
     const sql = 'SELECT * FROM login WHERE email = ?';
@@ -20,26 +19,26 @@ router.post('/login', (req, res) => {
             return res.status(401).json({ error: 'Credenciales incorrectas' });
         }
         const user = data[0];
-        // Verificar la contraseña
-        if (password !== user.password) { // Comparar la contraseña sin hashear
+        if (password !== user.password) { 
             return res.status(401).json({ error: 'Credenciales incorrectas' });
         }
-        // Si las credenciales son válidas, generar token JWT
+
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'secreto', { expiresIn: '1h' });
-        // Guardar el token en la base de datos
+
         const insertTokenQuery = 'INSERT INTO tokens (user_id, token) VALUES (?, ?)';
-       
         const tokenValues = [user.id, token];
-        console.log(user.id)
         db.query(insertTokenQuery, tokenValues, (error, result) => {
             if (error) {
                 console.error('Error al guardar el token en la base de datos:', error);
                 return res.status(500).json({ error: 'Error en el servidor' });
-            }
+            }     
+            // Establecer el token como un encabezado en la respuesta
+            res.set('Authorization', `Bearer ${token}`);
             return res.json({ token });
         });
     });
 });
+
 
 const verifyToken = (req, res, next) => {
     const token = req.headers.authorization;
@@ -105,13 +104,12 @@ const isAdmin = (req, res, next) => {
 
 // Ruta protegida que solo puede ser accedida por administradores
 router.get('/admin-only', isAdmin, (req, res) => {
-    // Si se llega a esta parte del código, significa que el usuario es un administrador
-    // y tiene acceso a esta ruta
+
     res.json({ message: 'Esta es una ruta solo para administradores' });
 });
 router.get('/user', verifyToken, (req, res) => {
     const userId = req.user.id;
-    // Consulta SQL para obtener los datos del usuario basados en su ID
+
     const sql = 'SELECT * FROM login WHERE id = ?';
     const values = [userId];
     db.query(sql, values, (error, data) => {
@@ -131,7 +129,7 @@ router.get('/user', verifyToken, (req, res) => {
 
 router.get('/users/:id', verifyToken, (req, res) => {
     const userId = req.params.id;
-    // Consulta SQL para obtener datos de un usuario específico basado en su ID
+    
     const sql = 'SELECT * FROM login WHERE id = ?';
     const values = [userId];
     db.query(sql, values, (error, data) => {
